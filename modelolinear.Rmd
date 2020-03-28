@@ -1,0 +1,73 @@
+
+
+```{r}
+#Estimating beta of a GGBR4 stock
+
+library(tidyverse)
+library(ggplot2)
+library(readr)
+
+
+
+# load stock data
+path <- 'data/IbovStocks_long.csv'
+
+data.col.types <- cols(price.adjusted = col_double(), 
+                       ref.date = col_date(format = ""), 
+                       ticker = col_character())
+
+data_stock <- readr::read_csv(path, col_types = data.col.types)
+
+
+
+# select random asset and filter data
+set.seed(10)
+df_asset <- data_stock %>% 
+              filter(ticker == 'GGBR4') %>% 
+              plyr::rename(c('price.adjusted' = 'stock_price'))
+
+
+# load Ibov data
+df_ibov <- readr::read_csv('data/Ibov.csv',
+                           col_types = cols(ref.date = col_date(format = ""), price_close = col_integer())) %>% 
+              plyr::rename(c('price.close' = 'ibov_price'))
+
+
+# merging the two datasets into a new one by the dates
+
+df <- merge(df_asset, df_ibov, by = 'ref.date')
+
+df
+
+```
+
+```{r}
+
+#Ploting the data
+
+df %>%
+  na.omit() %>% 
+  ggplot(aes(ibov_price, stock_price)) +
+  geom_point() +
+  geom_smooth(method = 'lm')
+
+
+```
+
+```{r}
+#Seems linear, lets make the model
+
+#Building and evaluating the model
+linear_model <- lm(stock_price ~ ibov_price, df)
+
+
+#Showing the summary
+summary(linear_model)
+
+```
+```{r}
+#Showing Pearson Correlation
+cor.test(~ ibov_price + stock_price, df)
+
+```
+
